@@ -150,7 +150,7 @@ event-display   http://event-display.{tutorial-namespace}.example.com         Tr
 
 Knative Eventing semantics allows you to link the Event Source to Event Sink using the **sink** block of the Knative Eventing source specification.
 
-As part of this exercise we will deploy the same `timed-greeter` integration that you deployed <<deploy-camel-k-integration,earlier>> but now as a CamelSource. The event source (CamelSource) is configured to drain the events to the sink `event-display`. 
+As part of this exercise we will deploy the same `timed-greeter` integration that you deployed <<deploy-camel-k-integration,earlier>> but now as a CamelSource that was deployed <<deploy-camel-k-source, in previous section>>. The event source (CamelSource) is configured to drain the events to the sink `event-display`. 
 
 The following listing provides the details of CamelSource configuration:
 
