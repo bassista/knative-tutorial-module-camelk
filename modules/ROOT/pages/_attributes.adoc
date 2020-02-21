@@ -1,10 +1,13 @@
 :moduledir: ..
-:branch: release/0.5
+:branch: master
 :github-repo: https://github.com/redhat-developer-demos/knative-tutorial/blob/{branch}
 :camelk-module-github-repo-uri: https://github.com/redhat-developer-demos/knative-tutorial-module-camelk
 :camelk-demos-github-repo-uri: https://github.com/redhat-developer-demos/knative-tutorial-camelk
 :camelk-demos-github-repo: {camelk-demos-github-repo-uri}/blob/{branch}
 :camelk-repo: advanced/camel-k
-:kamel-version: 0.3.3
+:kamel-version: 1.0.0-RC2
 :experimental:
 :maven-version: 3.6.0+
+:camel-source-version: 
+:knative-version: v0.12.0
+:camel-source-version: v0.12.2

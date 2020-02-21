@@ -1,4 +1,0 @@
-= Prerequisite
-include::_attributes.adoc[]
-
-include::partial$prereqs.adoc[]

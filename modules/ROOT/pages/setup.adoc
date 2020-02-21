@@ -1,136 +1,13 @@
 [#camelk-setup]
-= Setup
+== Setup
 include::_attributes.adoc[]
 
 [#camelk-prerequisite]
-== Prerequisite CLI tools
+== Prerequisite
 
-Apart from the tools you have xref:knative-tutorial-basics:ROOT:01-setup.adoc#prerequisite[installed], you might need few more for camelk sections of the tutorial.
-
-[cols="4*^,4*."]
-|===
-|**Tool** |**macOS** |**Fedora** | **Remarks**
-
-| AWS CLI
-| https://docs.aws.amazon.com/cli/latest/userguide/install-macos.html[install-macos]
-| https://docs.aws.amazon.com/cli/latest/userguide/install-linux.html[install-linux]
-|
-|===
-
-[#camelk-download-sources]
-== Demo Sources
-
-include::ROOT:partial$source-code.adoc[tag=camel-k-demos]
-
-== Install Applications
-
-Navigate to the apps folder:
-
-[#camelk-install-nav-to-apps-folder]
-[source,bash,subs="+macros,+attributes"]
-----
-cd $TUTORIAL_HOME/apps
-----
-copyToClipboard::camelk-install-nav-to-apps-folder[]
-
-[#camelk-install-minio-s3]
-=== Install minio s3 Object Storage Server
-
-We will use s3 Object storage for all https://www.enterpriseintegrationpatterns.com/patterns/messaging/FileTransferIntegration.html[File Transfer] integration style exercises and demos. The following section shows how to setup https://www.minio.io/[minio] a light weight AWS s3 compatible object storage server.
-
-[tabs]
-====
-kubectl::
-+
---
-[#camelk-install-k8s-minio]
-[source,bash,subs="+macros,+attributes"]
-----
-kubectl apply --namespace {tutorial-namespace} \
- --filename link:{github-repo}/apps/minio-s3-server/skaffold.yaml[minio-s3-server/skaffold.yaml]
-----
-copyToClipboard::camelk-install-k8s-minio[]
---
-oc::
-+
---
-[#camelk-install-oc-minio]
-[source,bash,subs="+macros,+attributes"]
-----
-oc apply --namespace {tutorial-namespace} \
- --filename link:{github-repo}/apps/minio-s3-server/skaffold.yaml[minio-s3-server/skaffold.yaml]
-----
-copyToClipboard::camelk-install-oc-minio[]
---
-====
-
-:kube-ns: knativetutorial
-include::partial$wait-for-pods.adoc[tag=wait-with-kubectl]
-
-A successful deployment of the minio server will show the following pods:
-
-[source,bash,subs="+macros,+attributes"]
-----
-# kubectl -n {tutorial-namespace} get pods
-NAME                            READY   STATUS    RESTARTS   AGE
-minio-server-66449f64bf-dtkch   1/1     Running   0          1m
-----
-
-The mino server exposes a web interface for managing the storage objects. To know the url of the web interface, run the following command:
-
-[tabs]
-====
-minikube::
-+
---
-[#camelk-minio-minikube-svc]
-[source,bash]
-----
-minikube service list -n {tutorial-namespace}
-----
-copyToClipboard::camelk-minio-minikube-svc[]
---
-minishift::
-+
---
-[#camelk-minio-minishift-svc]
-[source,bash,subs="+macros,+attributes"]
-----
-minishift openshift service list -n {tutorial-namespace}
-----
-copyToClipboard::camelk-minio-minishift-svc[]
---
-====
-
-Executing the command above shows an output like:
-
-[source,bash,subs="+macros,+attributes"]
-----
-
-|-----------------|--------------|----------------------------|
-|    NAMESPACE    |     NAME     |            URL             |
-|-----------------|--------------|----------------------------|
-| knativetutorial | minio-server | http://192.168.64.44:31565 |
-|-----------------|--------------|----------------------------|
-
-----
-
-[NOTE]
-====
-* The actual port and ip in the URL might change in your setup
-* The default username and password is `demoaccesskey/demosecretkey`
-====
-
-Opening the url on your browser will show minio Object storage browser as shown below:
-
-[#minio-webconsole]
-image::minio-server-browser.png[]
-
-The official minio documentation is available https://docs.minio.io/[here].
-
-[#minio-aws-cli-configure]
-=== Configure s3 aws cli for minio
-include::partial$minio-and-s3.adoc[tag=minio-aws-config]
+ifndef::workshop[]
+include::knative-tutorial:ROOT:partial$prereq-cli.adoc[]
+endif::[]
 
 [#install-camel-k]
 == Install Camel-k
@@ -142,70 +19,136 @@ Download the latest camel-k release from https://github.com/apache/camel-k/relea
 As of building this tutorial the latest **kamel** version was `{kamel-version}`
 ==== 
 
-Run the following commands to install the camel-k operator in the Kubernetes/OpenShift cluster:
-
-[source,bash,subs="+macros,+attributes"]
-----
-kamel install -n {tutorial-namespace}
-----
-
-:kube-ns: knativetutorial
-includepartial$wait-for-pods.adoc[tag=wait-with-kubectl]
-
-[NOTE]
-====
-The camel-k install will take some time, please wait for the successful installation before proceeding to the further sections of this tutorial.
-====
-
-A successful camel-k setup will have the following pods running/completed in `{tutorial-namespace}` namespace:
-
-[source,bash,subs="+macros,+attributes"]
-----
-# kubectl -n {tutorial-namespace} get pods | grep camel
-camel-k-cache                                              0/1     Completed   0          10h
-camel-k-ctx-bhq1ddi92mi5b779io60                           0/1     Completed   0          10h
-camel-k-groovy                                             0/1     Completed   0          10h
-camel-k-jvm                                                0/1     Completed   0          10h
-camel-k-knative                                            0/1     Completed   0          10h
-camel-k-kotlin                                             0/1     Completed   0          10h
-camel-k-operator-789b988bd9-9gzjn                          1/1     Running     0          10h
-camel-k-spring-boot                                        0/1     Completed   0          10h
-----
-
-[TIP]
-====
-If you have a local https://www.sonatype.com/nexus-repository-sonatype[nexus] or https://jfrog.com/artifactory/[artifactory] repository managers, then you cane set them as part of the camel-k install. This will make all the camel-k runtime and integration maven builds to use the repository manager.
-
-e.g. assuming you have nexus repository manager and is available at `http://192.168.64.1:8081/nexus/content/groups/public`
-
-[#camelk-kamel-maven-repo]
-[source,bash,subs="+macros,+attributes"]
-----
-kamel install -n {tutorial-namespace} \
-  --repository="http://192.168.64.1:8081/nexus/content/groups/public@id=public@snapshots"
-----
-copyToClipboard::camelk-kamel-maven-repo[]
-
-Check https://github.com/apache/camel-k#configure-additional-maven-repositories[here] for more details on using maven repositories with camel-k.
-====
-
-[#configure-local-registry]
-== Configure Local Container Registry 
-
-When camel-k builds the images, it pushes built container image to the local registry of the kubernetes cluster. Knative by default resolves all the tags of the container image to digests(SHA256), to be able to do this we need to have images pushed to real time container registry and repository, for these demos we will be using the local container registry that will be part of the minikube or minishift setup. Run the following commands to make Knative skip tag to digest resolution for local images from local registry.
-
+ifndef::workshop[]
 [tabs]
 ====
 kubectl::
 +
 --
-:k8s-cli: kubectl
-include::partial$extras.adoc[tag=config-k8s-local-registry]
+[#camel-k-k8s-install]
+[source,bash,subs="+quotes,+attributes,+macros"]
+-----
+kamel install --wait
+-----
+copyToClipboard::camel-k-k8s-install[]
+
+As with other installations in this tutorial, this process will take a few minutes for the Camel-K pods to be up and running.  You can monitor the progress of the installation by watching the pods in namespace `{tutorial-namespace}`.
+
+.Camel K Pods
+[#camel-k-watch-pods]
+[source,bash,subs="+quotes,+attributes,+macros"]
+-----
+watch kubectl -n {tutorial-namespace} get pods
+-----
+copyToClipboard::camel-k-watch-pods[]
+
+[NOTE]
+=====
+The Camel-k install will take some time, please wait for the successful installation before proceeding to the further sections of this tutorial.
+=====
+
+A successful camel-K setup will have the following pods running/completed in `{tutorial-namespace}` namespace:
+
+[source,bash,subs="+macros,+attributes"]
+-----
+NAME                                READY   STATUS      RESTARTS   AGE
+camel-k-operator-84d7896b68-9mfdv   1/1     Running     0          2m7s
+-----
 --
 oc::
 +
 --
-:k8s-cli: oc
-include::partial$extras.adoc[tag=config-k8s-local-registry]
+
+Camel-K is installed using its https://operatorhub.io/operator/camel-k[operator].Use the Operator Hub in OpenShift webconsole to install the Camel-K operator.
+
+Once the operator is deployed successfully, run the following command to setup `Camel-K` in the namespace:
+
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+kamel install --cluster-setup --skip-operator-setup
+----
+
+[NOTE]
+======
+In OpenShift, the `kamel install` command will not install Camel-K operator in each namespace, rather its done one time at cluster level when installing the Operator.
+======
+
+endif::[]
+ifndef::workshop[]
 --
+endif::[]
+====
+
+[#configure-maven-repo]
+== Configure Camel-k to build faster 
+
+Camel-K uses https://maven.apache.org[Apache Maven] to build the integration kits and its related containers. The Apache Maven settings for Camel K are stored in a ConfigMap `camel-k-maven-settings` in the {tutorial-namespace} namespace. One of the ways to make the build faster is by using a maven repository manager such as https://www.sonatype.com/nexus-repository-oss[Sonatype Nexus], the repository manager helps in caching the maven artifacts from remote repositories and serves them from local the subsequent times they are asked to be downloaded.
+
+Edit the ConfigMap using the command:
+
+ifndef::workshop[]
+[tabs]
+====
+kubectl::
++
+--
+[#camel-k-maven-config]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+kubectl edit -n {tutorial-namespace} cm camel-k-maven-settings
+----
+copyToClipboard::camel-k-maven-config[]
+--
+oc::
++
+--
+[#oc-camel-k-maven-config]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+oc edit  -n {tutorial-namespace} cm camel-k-maven-settings
+----
+copyToClipboard::oc-camel-k-maven-config[]
+endif::[]
+ifndef::workshop[]
+--
+endif::[]
+====
+
+The command above by default opens the ConfigMap YAML in vi. We can use the environment variable `KUBE_EDITOR`, to allow us to edit the YAML with the editor of our choice. For example setting `export KUBE_EDITOR=code -w`, will make the `kubectl edit` commands to open the Kubernetes resource YAML in https://code.visualstudio.com/[vscode].
+
+The following listing shows the Camel-K maven settings configured to use a Sonatype Nexus repository as its mirror:
+
+.Using Sonatype Nexus mirror
+[source,yaml,subs="attributes+"]
+----
+apiVersion: v1
+data:
+  settings.xml: |-
+    <?xml version="1.0" encoding="UTF-8"?>
+    <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+https://maven.apache.org/xsd/settings-1.0.0.xsd">
+      <localRepository></localRepository>
+      <mirrors>
+        <mirror>
+          <id>central</id>
+          <name>central</name>
+          <url>http://nexus:8081/nexus/content/groups/public</url> # <1>
+          <mirrorOf>*</mirrorOf>
+        </mirror>
+      </mirrors>
+      ...
+    </settings>
+kind: ConfigMap
+metadata:
+  labels:
+    app: camel-k
+  name: camel-k-maven-settings
+  namespace: {tutorial-namespace}
+----
+<1> This repository address needs to be updated as per your cluster setting. In example above the installed the Sonatype Nexus in the {tutorial-namespace}.
+
+[NOTE]
+====
+If you don't have a Sonatype nexus repository, you can deploy one into the cluster using the deployment `$TUTORIAL_HOME/install/utils/nexus/app.yaml`.
 ====
