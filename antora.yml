@@ -1,5 +1,5 @@
 name: knative-tutorial-camelk
-title: Eventing with Apache Camel
+title: Knative with Apache Camel-K
 version: master
 nav:
   - modules/ROOT/nav.adoc
