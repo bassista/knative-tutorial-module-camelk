@@ -11,7 +11,10 @@ Camel-K will enable you to craft a Kubernetes-native integration application. It
 
 [#camelk-tutorial-prerequisite]
 == Prerequisite 
-As pre-requisite to this tutorial, its highly recommended that you have completed xref:knative-tutorial:ROOT:index.adoc[Knative Tutorial Basics] completed.
+As pre-requisite to this tutorial, its highly recommended that you have completed: 
+
+* xref:knative-tutorial-module-serving:ROOT:index.adoc[Knative Serving]
+* xref:knative-tutorial-module-eventing:ROOT:index.adoc[Knative Eventing]
 
 == Camel-K and Knative Serving
 
