@@ -87,7 +87,6 @@ kubectl apply \
 A successful event display should show the following pod in the `{tutorial-namespace}`:
 
 [.console-input]
-[#deploy-ce-event-display]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
 watch kubectl get -n {tutorial-namespace} pods

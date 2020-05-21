@@ -1,9 +1,11 @@
-[#camelk-setup]
-== Setup
+= Page Title
 include::_attributes.adoc[]
 
+[#camelk-setup]
+== Setup
+
 [#install-camel-k]
-== Install Camel-k
+=== Install Camel-k
 
 Download the latest camel-k release from https://github.com/apache/camel-k/releases/latest[here]. Extract the content and add the binary `kamel` to the PATH.
 
@@ -71,7 +73,7 @@ In OpenShift, the `kamel install` command will not install Camel-K operator in e
 ====
 
 [#configure-maven-repo]
-== Configure Camel-k to build faster 
+=== Configure Camel-k to build faster 
 
 Camel-K uses https://maven.apache.org[Apache Maven] to build the integration kits and its related containers. The Apache Maven settings for Camel K are stored in a ConfigMap `camel-k-maven-settings` in the {tutorial-namespace} namespace. One of the ways to make the build faster is by using a maven repository manager such as https://www.sonatype.com/nexus-repository-oss[Sonatype Nexus], the repository manager helps in caching the maven artifacts from remote repositories and serves them from local the subsequent times they are asked to be downloaded.
 
@@ -92,7 +94,6 @@ kubectl create configmap \
 Install or Update `Camel-K` and make it use the maven repository settings:
 
 [.console-input]
-[#camel-k-maven-config]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
 kamel install --force \ #<.>
@@ -101,7 +102,52 @@ kamel install --force \ #<.>
 ----
 <.> `--force` is used to update any existing `Camel-K` installs to use the new settings
 
-[NOTE]
-====
-If you don't have a Sonatype nexus repository, you can deploy one into the cluster using the deployment `$TUTORIAL_HOME/install/utils/nexus/app.yaml`.
-====
+
+=== Deploy Nexus to Local Cluster (Optional)
+
+If you don't have a https://www.sonatype.com/download-oss-sonatype[Sonatype Nexus Repository^,role="ext-link"], you can deploy one into the cluster using the deployment `$TUTORIAL_HOME/install/utils/nexus/app.yaml`.
+
+[.console-input]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+kubectl apply -n {tutorial-namespace} -f $TUTORIAL_HOME/install/utils/nexus.yaml
+----
+
+Wait for the nexus pod to be ready:
+
+[.console-input]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+watch kubectl get -n {tutorial-namespace} pods
+----
+
+Once nexus is running you should see the following pod in the `{tutorial-namespace}`:
+
+[.console-output]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+NAME                                READY   STATUS    RESTARTS   AGE
+camel-k-operator-65db5d46bb-llc6g   1/1     Running   0          22h
+*nexus-5dc54dd879-tlv2g              1/1     Running   0          9m49s*
+----
+
+The nexus repository can be opened in your browser using the command:
+
+[.console-input]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+minikube -p {tutorial-namespace} service -n {tutorial-namespace} nexus
+----
+
+You need to use user `admin` to login. Nexus uses a generated password, to retrieve the generated password run:
+
+[.console-input]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+export NEXUS_POD=$(kubectl -n knativetutorial get pods \
+  -lapp=nexus -ojsonpath='{.items[0].metadata.name}')
+kubectl exec $NEXUS_POD -- cat /nexus-data/admin.password
+----
+
+You will be able to reset it after the first login. You can then <<configure-maven-repo>>.
+
