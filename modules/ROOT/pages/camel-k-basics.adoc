@@ -1,6 +1,8 @@
+= Page Title
+include::_attributes.adoc[]
+
 [[camel-k-basics]]
 == Camel-K Basics
-include::_attributes.adoc[]
 
 At the end of this chapter you will be able to:
 
@@ -39,7 +41,8 @@ Let us analyze our first Camel-K integration before running it. A Camel-K integr
 - from:
     uri: "timer:tick" #<1>
     parameters: #<2>
-      period: "10s"
+      # time in milliseconds (10 seconds)
+      period: 10000
     steps: #<3>
       - set-body: #<4>
           constant: "Welcome to Apache Camel K"
@@ -128,7 +131,7 @@ The following listing shows a simple `echoer` Knative Camel-K integration, that 
     steps:
       - log:
           message: "Got Message: ${body}"
-      - convert-body: "java.lang.String" #<2>
+      - convert-body-to: "java.lang.String" #<2>
       - choice:
           when:
             - simple: "${body} != null && ${body.length} > 0"
@@ -170,7 +173,7 @@ You can use `stern camel-k` to monitor the progress of the builder pod as well a
 
 Since its the production mode and it takes some time for the integration to come up, you need to watch the integration\'s logs using the command `kamel log <integration name>` i.e. `kamel log echoer` and you can get the name of the integration using the command `kamel get`.
 
-In the integration that you had deployed, you had applied the https://camel.apache.org/manual/latest/choice-eip.html[Choice EIP] when processing the exchange body. When the body has content then it simply converts the body to upper case otherwise it returns a canned response of "no body received". In either case, the content type header is set to `text/plain`.
+In the integration that you had deployed, you had applied the https://camel.apache.org/components/latest/eips/choice-eip.html[Choice EIP^, role="ext-link"] when processing the exchange body. When the body has content then it simply converts the body to upper case otherwise it returns a canned response of "no body received". In either case, the content type header is set to `text/plain`.
 
 Camel-K defines an `integration` via Custom Resource Definition (CRD) and you can view those CRDs and the actual `integrations` via the following commands:
 
@@ -262,5 +265,6 @@ Explore the `kamel` tool via its help option of `kamel --help` to see the list o
 [#camelk-gs-cleanup]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
+$TUTORIAL_HOME/bin/clean-completed.sh
 kamel delete echoer
 ----

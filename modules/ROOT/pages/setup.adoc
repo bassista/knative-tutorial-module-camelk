@@ -12,17 +12,18 @@ Download the latest camel-k release from https://github.com/apache/camel-k/relea
 As of building this tutorial the latest **kamel** version was `{kamel-version}`
 ==== 
 
-ifndef::workshop[]
 [tabs]
 ====
-kubectl::
+Kubernetes::
 +
 --
 [.console-input]
 [#camel-k-k8s-install]
 [source,bash,subs="+quotes,+attributes,+macros"]
 -----
-kamel install --wait
+kamel install --olm=false \
+  --maven-repository=https://repository.apache.org/content/repositories/snapshots@id=apache-snapshots@snapshots \
+ --wait
 -----
 
 As with other installations in this tutorial, this process will take a few minutes for the Camel-K pods to be up and running.  You can monitor the progress of the installation by watching the pods in namespace `{tutorial-namespace}`.
@@ -49,7 +50,7 @@ NAME                                READY   STATUS      RESTARTS   AGE
 camel-k-operator-84d7896b68-9mfdv   1/1     Running     0          2m7s
 -----
 --
-oc::
+OpenShift::
 +
 --
 
@@ -66,11 +67,7 @@ kamel install --cluster-setup --skip-operator-setup
 ======
 In OpenShift, the `kamel install` command will not install Camel-K operator in each namespace, rather its done one time at cluster level when installing the Operator.
 ======
-
-endif::[]
-ifndef::workshop[]
 --
-endif::[]
 ====
 
 [#configure-maven-repo]
@@ -78,48 +75,31 @@ endif::[]
 
 Camel-K uses https://maven.apache.org[Apache Maven] to build the integration kits and its related containers. The Apache Maven settings for Camel K are stored in a ConfigMap `camel-k-maven-settings` in the {tutorial-namespace} namespace. One of the ways to make the build faster is by using a maven repository manager such as https://www.sonatype.com/nexus-repository-oss[Sonatype Nexus], the repository manager helps in caching the maven artifacts from remote repositories and serves them from local the subsequent times they are asked to be downloaded.
 
-Edit the ConfigMap using the command:
+Edit the file `$TUTORIAL_HOME/install/utils/camel-k-maven-settings.xml` to adjust to your maven repository settings:
+
+
+Create the ConfigMap using the command:
 
 [.console-input]
 [#camel-k-maven-config]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
-kubectl edit -n {tutorial-namespace} cm camel-k-maven-settings
+kubectl create configmap \
+  -n {tutorial-namespace} my-camel-k-maven-settings \
+  --from-file=settings.xml="$TUTORIAL_HOME/install/utils/camel-k-maven-settings.xml"
 ----
 
-The command above by default opens the ConfigMap YAML in vi.Using an environment variable `KUBE_EDITOR` allow us to edit the YAML with the editor of our choice. For example setting `export KUBE_EDITOR=code -w`, will make the `kubectl edit` commands to open the Kubernetes resource YAML in https://code.visualstudio.com/[vscode].
+Install or Update `Camel-K` and make it use the maven repository settings:
 
-The following listing shows the Camel-K maven settings configured to use a Sonatype Nexus repository as its mirror:
-
-.Using Sonatype Nexus mirror
-[source,yaml,subs="attributes+"]
+[.console-input]
+[#camel-k-maven-config]
+[source,bash,subs="+quotes,+attributes,+macros"]
 ----
-apiVersion: v1
-data:
-  settings.xml: |-
-    <?xml version="1.0" encoding="UTF-8"?>
-    <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-https://maven.apache.org/xsd/settings-1.0.0.xsd">
-      <localRepository></localRepository>
-      <mirrors>
-        <mirror>
-          <id>central</id>
-          <name>central</name>
-          <url>http://nexus:8081/nexus/content/groups/public</url> # <1>
-          <mirrorOf>*</mirrorOf>
-        </mirror>
-      </mirrors>
-      ...
-    </settings>
-kind: ConfigMap
-metadata:
-  labels:
-    app: camel-k
-  name: camel-k-maven-settings
-  namespace: {tutorial-namespace}
+kamel install --force \ #<.>
+  --maven-settings="configmap:my-camel-k-maven-settings/settings.xml" \
+  --wait
 ----
-<1> This repository address needs to be updated as per your cluster setting. In example above the installed the Sonatype Nexus in the {tutorial-namespace}.
+<.> `--force` is used to update any existing `Camel-K` installs to use the new settings
 
 [NOTE]
 ====
