@@ -1,6 +1,8 @@
+= Page Title
+include::_attributes.adoc[]
+
 [[camel-k-eventing]]
 == Camel-K Eventing
-include::_attributes.adoc[]
 
 At the end of this chapter you will be able to:
 
@@ -8,6 +10,14 @@ At the end of this chapter you will be able to:
 - Using Knative CamelSource
 - Connect Camel-K source to Sink
 
+Navigate to the tutorial chapter's folder {camelk-repo}:
+
+[.console-input]
+[#camelk-repo-nav-folder]
+[source,bash,subs="+macros,+attributes"]
+----
+cd $TUTORIAL_HOME/{camelk-repo}
+----
 
 [#deploy-camel-k-source]
 === Deploy Knative Eventing CamelSource
@@ -26,20 +36,26 @@ kubectl apply \
 
 Once you deploy, thee following new pod showing up the `knative-sources` namespace:
 
+[.console-input]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+kubectl -n knative-sources get pods
+----
+
 [.console-output]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
-NAME                         READY   STATUS    RESTARTS   AGE
-camel-controller-manager-0   1/1     Running   0          12h
+NAME                                        READY   STATUS    RESTARTS   AGE
+*camel-controller-manager-0                  1/1     Running   0          88s*
 ----
 
-Plus, CamelSource is now part of the API for your Kubernetes cluster:
+Plus, CamelSource is now part of the API along with other Knative Eventing Sources that you might have deployed:
 
 [.console-input]
 [#camel-k-camelsource-api]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
-kubectl api-resources --api-group=sources.eventing.knative.dev
+kubectl api-resources --api-group=sources.knative.dev
 ----
 
 The command above should list: 
@@ -47,13 +63,12 @@ The command above should list:
 [.console-output]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
-NAME               APIGROUP                       NAMESPACED   KIND
-apiserversources   sources.eventing.knative.dev   true         ApiServerSource
-camelsources       sources.eventing.knative.dev   true         *CamelSource*
-containersources   sources.eventing.knative.dev   true         ContainerSource
-cronjobsources     sources.eventing.knative.dev   true         CronJobSource
-sinkbindings       sources.eventing.knative.dev   true         SinkBinding
-kafkasources       sources.eventing.knative.dev   true         KafkaSource
+NAME               SHORTNAMES   APIGROUP              NAMESPACED   KIND
+apiserversources                sources.knative.dev   true         ApiServerSource
+*camelsources                    sources.knative.dev   true         CamelSource*
+containersources                sources.knative.dev   true         ContainerSource
+pingsources                     sources.knative.dev   true         PingSource
+sinkbindings                    sources.knative.dev   true         SinkBinding
 ----
 
 [#logging-ce-messages]
@@ -66,10 +81,16 @@ In order for you to view the events drained from the CamelSource `timed-greeter`
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
 kubectl apply \
-  -f https://github.com/knative/eventing-contrib/releases/download/{knative-version}/event-display.yaml
+  -f https://github.com/knative/eventing-contrib/releases/download/{camel-source-version}/event-display.yaml
 ----
 
 A successful event display should show the following pod in the `{tutorial-namespace}`:
+
+[.console-input]
+[source,bash,subs="+quotes,+attributes,+macros"]
+----
+watch kubectl get -n {tutorial-namespace} pods
+----
 
 [.console-output]
 [source,bash,subs="+quotes,+attributes,+macros"]
@@ -90,7 +111,7 @@ The following listing provides the details of CamelSource configuration:
 .timed-greeter CamelSource
 [source,yaml]
 ----
-apiVersion: sources.eventing.knative.dev/v1alpha1 #<1>
+apiVersion: sources.knative.dev/v1alpha1 #<1>
 kind: CamelSource
 metadata:
   name: timed-greeter
@@ -103,7 +124,8 @@ spec:
       from:
         uri: "timer:tick"
         parameters:
-          period: "10s"
+          # time in milliseconds (10 s)
+          period: 10000
         steps:
           - set-body:
               constant: "Welcome to Apache Camel-K"
@@ -121,7 +143,7 @@ spec:
       name: event-display
 
 ----
-<1> The CamelSource is provided by the API `sources.eventing.knative.dev`, it is now available as a result of deploying the CamelSource event source.
+<1> The CamelSource is provided by the API `sources.knative.dev`, it is now available as a result of deploying the CamelSource event source.
 <2> The CamelSource spec has two main sections: `integration` and `source`. The `integration` block is used to configure the Camel-K integration specific properties such as dependencies, traits, etc. In this example we add the required dependencies such as `camel:log`, it is the dependency that you earlier passed via `kamel` CLI.
 <3> The `source` block is used to define the Camel-K integration definition. The `flow` attribute of the `source` block allows you define the Camel route.
 <4> The event sink for messages from the Camel event source. The sink could be either a Knative Service, Knative Event Channel or Knative Event Broker. In this case it is configured to be the `event-display` Knative Service.
@@ -153,7 +175,7 @@ NAME            READY   AGE
 timed-greeter   True    114s
 ----
 
-You will also see the `event-display` pod scaling up to receive the events from `timed-greeter`.
+Once the `timed-greeter` is ready, you will notice Knative sink `event-display` scale up to receive the events from `timed-greeter`.
 
 .CamelSource `timed-greeter` pod and event-display pod
 [.console-output]
@@ -166,7 +188,7 @@ event-display-dmq4s-deployment-775789b565-fnf2t   2/2     Running   17s
 timed-greeter-m4chq-7cbf4ddc66-kxpqd              1/1     Running   86s
 ----
 
-Open a new terminal and run the following command to start watching the events that are being drained into the `event-display` Knative service using the command:
+Open a new terminal and run the following command to start watching the events that are being drained into the sink `event-display` Knative service using the command:
 
 [#camel-k-kn-eventing-logs]
 [.console-input]
@@ -199,6 +221,7 @@ event-... user-container   source: camel-source:knativetutorial/timed-greeter
 [#camelk-eventing-cleanup]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
+$TUTORIAL_HOME/bin/clean-completed.sh
 kubectl -n {tutorial-namespace} delete camelsource timed-greeter
 ----
 
