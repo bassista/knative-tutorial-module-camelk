@@ -71,7 +71,7 @@ It is possible  have any number of steps as needed for an integration based on y
 [[deploy-integration-dev-mode]]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
-kamel run --dev --dependency 'camel:log' get-started/timed-greeter.yaml
+kamel run --dev get-started/timed-greeter.yaml
 ----
 
 A typical Camel K integration deployment will take approximately 2-5 minutes, as it involves multiple steps such as:
@@ -86,7 +86,7 @@ Once the integration is built, you sill see the terminal populated with logs fro
 [.console-output]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
-# kamel run --dev --dependency 'camel:log' get-started/timed-greeter.yaml
+# kamel run --dev get-started/timed-greeter.yaml
 ...
 [1] 2020-01-13 03:25:28.548 INFO  [Camel (camel-k) thread #1 - timer://tick] info - Exchange[
 [1]   Id: ID-timed-greeter-57b4d49974-vg859-1578885868551-0-13
@@ -162,8 +162,7 @@ You can run this integration as shown in the following listing. If you notice th
 [.console-input]
 [source,bash,subs="+quotes,+attributes,+macros"]
 ----
-kamel run --wait --dependency camel:log --dependency camel:bean \
-    get-started/echoer.yaml
+kamel run --wait get-started/echoer.yaml
 ----
 
 [NOTE]
